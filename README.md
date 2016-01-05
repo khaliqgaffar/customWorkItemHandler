@@ -8,7 +8,7 @@ The documentation of the workshop, including the description of the labs and exe
 
 ## Interesting links:
 * [The Drools project](http://www.jbpm.org)
-* [The JBoss BRMS platform](http://www.redhat.com/en/technologies/jboss-middleware/bpm)
+* [The JBoss BPMSuite platform](http://www.redhat.com/en/technologies/jboss-middleware/bpm)
 
 *
 *

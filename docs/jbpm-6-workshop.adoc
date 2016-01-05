@@ -3,6 +3,83 @@
 Business Process Management:: _Business process management (BPM) is a field in operations management that focuses on improving corporate performance by managing and optimising a company's business processes._ 
 
 
+== jBPM Process Editors
+jBPM/BPMSuite processes are defined in BPMN2, the Business Process Modeling and Notation standard which defines a graphical notation and execution model for business processes. As jBPM uses the BPMN2 standard, process definitions can be created using a variety of tools that support the BPMN2 standard. Out-of-the-box, BPMSuite provides the following editors:
+
+* JBoss Developer Studio / Eclipse BPMN2 editor: a BPMN2 editor available in the JBDS IDE.
+* JBoss BPMSuite Business Central web-editor: a web-based BPMN2 editor available in the JBoss BPMSuite Business Central console.
+
+=== JBoss Developer Studio
+
+A business process is defined in BPMN2. A BPMN2 file in KIE/Drools/jBPM is regarded, like a _.drl_, _.xls_, _.dsl_, etc., as a Drools https://docs.jboss.org/jbpm/v6.3/javadocs/org/kie/api/io/ResourceType.html[ResourceType]. Hence, a BPMN2 file is defined, stored and loaded into a `KieBase` in exactly the same way as any other Drools ResourceType.
+
+To define a BPM process, a _.bpmn_ file should be created in the _src/main/resources_ directory of a Java project, the project from which we will create a _KJAR_. Next to this _.bpmn_ file, we need to define a _kmodule.xml_ in the _src/main/resources/META-INF_ directory.
+
+image:images/jbds-kjar-layout.png["JBDS KJAR Layout"]
+
+image:images/jbds-process-editor.png["JBDS Process Editor", height=128]
+
+
+=== JBoss BPMSuite Business-Central web-editor
+
+image:images/business-central-process-editor.png["Business Central Process Editor",height=128]
+
+
+
+== BPMN 2.0
+
+Business Process Model and Notation (BPMN) is a graphical representation for specifying business processes in a business process model.
+
+Business Process Management Initiative (BPMI) developed BPMN, which has been maintained by the Object Management Group since the two organizations merged in 2005. Version 2.0 of BPMN was released in January 2011,[1] at which point the name was adapted to Business Process Model and Notation as execution semantics were also introduced alongside the notational and diagramming elements.
+
+=== Elements
+jBPM6 does not implement all elements and attributes as defined in the BPMN 2.0 specification. 
+
+It does however support a significant subset, including the most common node types that can be used inside executable processes. This includes (almost) all elements and attributes as defined in the "Common Executable" subclass of the BPMN 2.0 specification, extended with some additional elements and attributes we believe are valuable in that context as well. The full set of elements and attributes that are supported can be found below, but it includes elements like:
+
+* Flow objects
+** Events
+*** Start Event (None, Conditional, Signal, Message, Timer)
+*** End Event (None, Terminate, Error, Escalation, Signal, Message, Compensation)
+*** Intermediate Catch Event (Signal, Timer, Conditional, Message)
+*** Intermediate Throw Event (None, Signal, Escalation, Message, Compensation)
+*** Non-interrupting Boundary Event (Escalation, Signal, Timer, Conditional, Message)
+*** Interrupting Boundary Event (Escalation, Error, Signal, Timer, Conditional, Message, Compensation)
+** Activities
+*** Script Task
+*** Task
+*** Service Task
+*** User Task
+*** Business Rule Task
+*** Manual Task
+*** Send Task
+*** Receive Task
+*** Reusable Sub-Process (Call Activity)
+*** Embedded Sub-Process
+*** Event Sub-Process
+*** Ad-Hoc Sub-Process
+*** Data-Object
+** Gateways
+*** Diverging
+**** Exclusive
+**** Inclusive
+**** Parallel
+**** Event-Based
+*** Converging
+**** Exclusive
+**** Inclusive
+**** Parallel
+* Lanes
+* Data
+** Java type language
+** Process properties
+** Embedded Sub-Process properties
+** Activity properties
+* Connecting objects
+** Sequence flow
+
+
+
 == jBPM APIs
 
 jBPM 6 (and 5) evolved out of a project called _Drools Flow_, a project that provided workflow or (business) process capabilities to the Drools platform. As such, the jBPM, like Drools, also uses the common *KIE* API, where KIE stands for *Knowledge Is Everything*.
@@ -15,24 +92,45 @@ We've already discussed the *KIE* API in great detail in the *jboss-brms-6-works
 
 The JavaDoc for the API can be found http://docs.jboss.org/drools/release/latest/kie-api-javadoc/index.html[here].
 
+jBPM is a very lightweight process engine. It consists mainly of a couple of small JAR files (e.g. jbpm-bpmn2-{version}.jar, jbpm-flow-{version}.jar, etc.) and can run in a number of different modes.
 
-http://docs.jboss.org/drools/release/latest/kie-api-javadoc/org/kie/api/KieServices.html[KieServices]:: Interface into the KIE API and runtime. Built by the KieServices.Factory: 'KieServices.Factory.get();'
-http://docs.jboss.org/drools/release/latest/kie-api-javadoc/org/kie/api/runtime/KieContainer.html[KieContainer]:: Container for KieBases and KieSessions. Provides the API to build new _Stateless_ and _Stateful_ KieSessions.
-http://docs.jboss.org/drools/release/latest/kie-api-javadoc/org/kie/api/runtime/KieSession.html[KieSession]:: A Drools/KIE session in which _facts_ and/or _events_ can be inserted and in which _rules_ are executed. A session can be either _Stateful_ or _Stateless_
-	http://docs.jboss.org/drools/release/latest/kie-api-javadoc/org/kie/api/runtime/KieSession.html[Stateful KieSession]::: A _KieSession_ is by default _stateful_. This implies that the session retains state until it is expicitly disposed by calling the 'KieSession.dispose()' method.
-				This implies that a system can continuously insert facts and fire rules until the session is explicitly disposed.
-	http://docs.jboss.org/drools/release/latest/kie-api-javadoc/org/kie/api/runtime/StatelessKieSession.html[Stateless KieSession]::: A _stateless_ KieSession is basically a wrapper around a _stateful_ KieSession. The differences is that one cannot interact with the session.
-				The session's 'execute' method can be called only once, after which the session is automatically disposed. Interaction with the session is done by passing Drools 'Command'
-				objects to the session. The session is automically disposed after the commands have been executed.
-http://docs.oracle.com/javase/6/docs/api/java/util/EventListener.html[EventListeners]:: Drools provides a pluggable EventListener system based on the standard Java EventListener interface. The system provides 3 interfaces:
-	http://docs.jboss.org/drools/release/latest/kie-api-javadoc/org/kie/api/event/rule/AgendaEventListener.html[AgendaEventListener]::: Provides listener functionality for _Agenda_ events, e.g. `matchCreated`, `beforeMatchFired`, `afterMatchFired`, `beforeRuleFlowGroupActivated`, etc. This allows one to, for example.
-				implement loggers, auditing functionality (which rules have fired) and debugging functionality. In a recent Red Hat Services engagement, this feature was used to implement
-				a framework to verify how many rules are covered during a JUnit test run.
-	http://docs.jboss.org/drools/release/latest/kie-api-javadoc/org/kie/api/event/rule/RuleRuntimeEventListener.html[RuleRuntimeEventListener]::: Provides listener functionality for _WorkingMemory_ events. These events are fired when objects (facts, events) are inserted in, updated in or removed from the session's WorkingMemory.
-	http://docs.jboss.org/drools/release/latest/kie-api-javadoc/org/kie/api/event/process/ProcessEventListener.html[ProcessEventListener]::: Listens to process events like beforeProcessStarted, afterProcessStarted, beforeNodeTriggered, etc. This interface is for example iplemented by the _JPAWorkingMemoryDbLogger_ which is 
-				responsible for logging jBPM process data to database for, for example, BAM purposes.
-http://docs.jboss.org/drools/release/latest/kie-api-javadoc/org/kie/api/runtime/rule/AgendaFilter.html[AgendaFilter]:: The _AgendeFilter_ interface provides a means to control whether a rule should be fired or not. By implementing the 'boolean accept(Match match)' method, one can control whether the rule firing is accepted for
-a given _Match_ or not. This can for example be based on the name of the rule, the facts that caused the rule to match, etc. This interface can for example be used in _JUnit_ tests to only allow the rule under test to fire.
+==== In-Memory Process Execution
+The most simple way of running jBPM is without any form of persistence and/or transactions. In this mode, the process will run in-memory and should not contain any, so-called, wait-states. I.e. from process-start to process-end should be one continuous flow of execution, without requiring any additional input (e.g. Human Task completion, external signals, etc.).
+
+As we know, jBPM and BPM in general deals with stateful, long-running processes. In our Drools/BRMS workshop we've mostly worked with stateless data, i.e. spinning up a `KieSession`, inserting data (facts) into the session, firing the rules, collecting the results and disposing the session. With jBPM, we can do the same thing, as long as the process does not have any wait-states. I.e. the process can run from start to finish, completely in memory, without requiring any external input after the process has started.
+
+Obviously, this is not your everyday use-case for a BPM process, however, it does show the concept of running a BPM process inside jBPM/KIE.
+
+In this mode, the API being used is just the plain http://docs.jboss.org/drools/release/latest/kie-api-javadoc/org/kie/api/runtime/KieSession.html[KieSession] API. Just as wiht a Drools project, the `.bpmn` file (a Drools Resource) is placed in the `src/main/resources` directory, accompanied by a `kmodule.xml` file in the `src/main/resources/META-INF` directory. A `KieSession` is created in the exact same way as with a Drools project, using the http://docs.jboss.org/drools/release/latest/kie-api-javadoc/org/kie/api/KieServices.html[KieServices] and http://docs.jboss.org/drools/release/latest/kie-api-javadoc/org/kie/api/runtime/KieContainer.html[KieContainer]. To start a process, simply call `kieSession.startProcess(String processId)`.
+
+===== Lab 1
+In this first Lab, we will explore how to create and start a very simple jBPM process from JBoss Developer Studio. Import the *jbpm-6-workshop-use-case-1* project into JBoss Developer Studio (Import -> Existing Maven Projects). This project already contains a `Main` class with some of the required code to load a `KieContainer`. Furthermore, the project is fully configured with all required Maven dependencies to run a process. Finally, a `kmodule.xml` file has already been pre-configured in the`src/main/resources/META-INF` directory.
+
+The task is simple:
+
+* Create a very simple BPMN2 process file in the `src/main/resources' directory.
+* Create a process that has a _start-node_, a _script-task-node_, and an _end_node_.
+* Configure the _script-task-node_ to print "Hello Process".
+* Finish the code in the `Main` class to create a `KieSession` from the `KieContainer`, start the process and dispose the `KieSession`.
+
+
+=== EventListeners
+As with Drools/BRMS, a powerful and important concept in the *KIE* API when it comes to jBPM are the `EventListeners`. We've seen 'EventListeners' before in the BRMS workshop, where we mostly looked at `RuleRuntimeEventListeners` and `AgendaEventListener`. The most important `EventListener` from a jBPM perspective is the `ProcessEventListener`. 
+
+The `ProcessEventListener` allows us to listen to process events like:
+* beforeProcessStarted
+* afterProcessStarted
+* beforeProcessCompleted
+* afterProcessCompleted
+* beforeNodeTriggered
+* afterNodeTriggered.
+
+The full API can be found https://docs.jboss.org/jbpm/v6.3/javadocs/org/kie/api/event/process/ProcessEventListener.html[here].
+
+
+
+
+
 
 === Drools Resources
 A rulebase can be created from various sources. Drools supports the following resources out of the box:

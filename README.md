@@ -7,7 +7,7 @@ asynchronous execution, custom workitemhandlers, process event listeners and cus
 The documentation of the workshop, including the description of the labs and exercises can be found [here](docs/jbpm-6-workshop.adoc)
 
 ## Interesting links:
-* [The Drools project](http://www.jbpm.org)
+* [The jBPM project](http://www.jbpm.org)
 * [The JBoss BPMSuite platform](http://www.redhat.com/en/technologies/jboss-middleware/bpm)
 
 *

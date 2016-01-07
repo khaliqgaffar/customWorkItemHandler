@@ -176,6 +176,28 @@ More information BPMSuite clustering can be found http://planet.jboss.org/post/c
 
 === BPMSuite Runtime Architecture
 
+==== Business Central
+Apart from design-time components, Business Central also provides the deployment and runtime componens of JBoss BPMSuite. KJARs with process definitions can be deployed on the JBoss BPMSuite platform and started from the BPMSuite user interface. Business Central contains:
+
+* Deployment interface: provides the capability to deploy any KJAR onto the BPMSuite runtime environment.
+* Process Definitions interface: list available process definitions and provide availability to start a process.
+* Process Instances interface: list and manage active, completed and aborted process instances. 
+* Tasks List: manage Human Tasks 
+* Dashboards: Business Process Monitoring and Business Activity Monitoring (BAM) dashboards.
+
+===== REST interface
+Apart from the UIs provided by Business Central, the platform also provides a number of supported remoting protocols that allow process and task management (e.g. start, stop, signal) from remote clients:
+
+* Remote Java API: The Remote Java API provides `KieSession`, `TaskService` and `AuditService` interfaces to the JMS and REST APIs. The interface implementations provided by the Remote Java API take care of the underlying logic needed to communicate with the JMS or REST APIs. In other words, these implementations will allow you to interact with a remote workbench instance (i.e. KIE workbench or the jBPM Console) via known interfaces such as the KieSession or TaskService interface, without having to deal with the underlying transport and serialization details.
+* REST API: allows any remote RESTful client to interact with the Business-Central platform to deploy KJARs, start processes, claim human tasks, complete human tasks, etc. The RESTful APIs are defined in the 
+* REST Query API: allows remote RESTful clients to _richly_ query the process engine.
+* JMS API: interact with the process engine using JMS. This API does not provided functionality to manage deployments (i.e. deploy and/or undeploy KJARs).
+
+More information about the jBPM remoting interfaces can be found https://docs.jboss.org/jbpm/v6.3/userguide/ch17.html[here].
+
+
+=== KIE Execution Server
+
 Until JBoss BPMSuite 6.2, the only out-of-the-box environment on which processes could be deployed and executed was the Business Central platform. In 6.2, a new, unified, KIE Execution Server (or Decision Server) was introduced that allows KJARs to be deployed and processes to be executed on a more lightweight container (big benefit: cloud and container deployments).
 
 The KIE Execution Server was already available in JBoss BRMS/BPMSuite 6.1, but was only targetted at running rules. In version 6.2, the Execution Server can now also run processes. This allows for a more clean seperation of the Business Central design-time environment and the actual process runtime environmnet. I.e the instances can be individually scaled based on the requirements, we no longer need to deploy a fulle design-time environment in production to run process instances, etc.
@@ -204,10 +226,8 @@ Basically, the Execution Server can operate in 2 modes:
 
 
 
-
-
-
-
+=== KJAR deployment
+KJARs are not actually deployed on a
 
 
 

@@ -3,29 +3,6 @@
 Business Process Management:: _Business process management (BPM) is a field in operations management that focuses on improving corporate performance by managing and optimising a company's business processes._ 
 
 
-== jBPM Process Editors
-jBPM/BPMSuite processes are defined in BPMN2, the Business Process Modeling and Notation standard which defines a graphical notation and execution model for business processes. As jBPM uses the BPMN2 standard, process definitions can be created using a variety of tools that support the BPMN2 standard. Out-of-the-box, BPMSuite provides the following editors:
-
-* JBoss Developer Studio / Eclipse BPMN2 editor: a BPMN2 editor available in the JBDS IDE.
-* JBoss BPMSuite Business Central web-editor: a web-based BPMN2 editor available in the JBoss BPMSuite Business Central console.
-
-=== JBoss Developer Studio
-
-A business process is defined in BPMN2. A BPMN2 file in KIE/Drools/jBPM is regarded, like a _.drl_, _.xls_, _.dsl_, etc., as a Drools https://docs.jboss.org/jbpm/v6.3/javadocs/org/kie/api/io/ResourceType.html[ResourceType]. Hence, a BPMN2 file is defined, stored and loaded into a `KieBase` in exactly the same way as any other Drools ResourceType.
-
-To define a BPM process, a _.bpmn_ file should be created in the _src/main/resources_ directory of a Java project, the project from which we will create a _KJAR_. Next to this _.bpmn_ file, we need to define a _kmodule.xml_ in the _src/main/resources/META-INF_ directory.
-
-image:images/jbds-kjar-layout.png["JBDS KJAR Layout"]
-
-image:images/jbds-process-editor.png["JBDS Process Editor", height=128]
-
-
-=== JBoss BPMSuite Business-Central web-editor
-
-image:images/business-central-process-editor.png["Business Central Process Editor",height=128]
-
-
-
 == BPMN 2.0
 
 Business Process Model and Notation (BPMN) is a graphical representation for specifying business processes in a business process model.
@@ -78,6 +55,185 @@ It does however support a significant subset, including the most common node typ
 * Connecting objects
 ** Sequence flow
 
+image:images/Start_and_End_events.png["Start and End events", height=128]
+
+image:images/Tasks.png["Tasks", height=128]
+
+=== JBoss BPMSuite Business-Central
+
+The main design-time, runtime and management environment of JBoss BPMSuite is the Business-Central platform. Business-Central is shipped and installe out-of-the-box with both JBoss BRMS and JBoss BPMSuite, where the provided functionality of the version in JBoss BRMS is a subset of the functionality provided in JBoss BPMSuite.
+
+Business-Central provides the following functionality:
+
+* Authoring
+** Project Authoring
+*** Project Editor
+*** Guided Rule Editor
+*** Decision Table Editor
+*** Business Process Editor
+** Repository Management (Maven)
+** Administration
+*** Organizational Unit
+*** Source Repository (Git)
+* Deployment
+** Process Deployments
+** Rule Deployments
+** Jobs (asynchronous execution).
+* Process Management
+** Process Definitions
+** Process Instances
+* Tasks
+** Task List
+* Dashboards
+** Process and Task Dashboard
+** Business Dasboards
+* Extensions
+** PlugIn Management
+** Apps
+** Data Sets
+
+image:images/bpmsuite-buniness-central-overview.png["BPMSuite Business Central Overview", height=128]
+
+Business Central provides all basic functionalities to author, deploy and run processes. It contains its own SCM system (Git), it's own artefact repository (Maven), it's own deployment server and it's own process runtime, all in a single JBoss BPMSuite instance. This allows one to run the full BPMSuite platform, both design, runtime and management environment, from a single BPMSuite installation.
+
+In a customer's existing IT landscape, JBoss BPMSuite will most likely need to be integrated within an existing architecture. The IT environment will most likely already have a corporate defined SCM system (Git, Subversion, ClearCase, Perforce, etc.), a Continuous Integration and/or build environment, an artefact repository, etc. 
+
+To accomodate for these environments, we can create more specific architectures that integrate JBoss BPMSuite with enterprise IT environments. We will first discuss the BPMSuite Design-time Architecture. This architecture shows how existing CI-servers, Maven repository-managers, etc. can be utilized in combination with JBoss BPMSuite.
+
+image:images/BPMSuite-Development-Architecture.jpg["BPMSuite Development Architecture", height=128]
+
+
+==== BPMSuite Design Server
+In this architecture we separate the design time (Guvnor, jBPM designer, guided-rule-editor, etc.) from the BPMSuite runtime environment. Reason for this is that:
+
+* We want to separate design-time and runtime concerns, which gives us more flexibility with regards to, for example, scalability.
+* We want to integrate with a centralised corporate SCM.
+* We don't utilise the internal build and deploy capabilities from BPMSuite to transition design time artefacts (BPMN process definition, drl, etc.) to the runtime (KJAR deployment). Instead, we integrate with an existing CI environment.
+ 
+===== Git Repository
+The BPMSuite Design Server's Git repositories are cloned from a central Git/SCM. This implies that the BPMSuite and BRMS development artifacts are maintained in the central SCM, and not in the BPMSuite repositories. This has the advantage that the BPMSuite repository does not need to be managed by a corporate SCM team, that all development artifacts are stored in a centrally managed environment, that existing SCM policies can be used and that existing integration with corporate CI systems can be re-used.
+ 
+The implication of this choice is that changes committed to the BPMSuite Git repository by the BPMSuite components (designers, editors, etc.) need to be pushed to the central repository (i.e. remote origin). How this is done can be decided by the customer, but in general we see two possible approaches:
+
+* Automatically: push to remote origin via a commit hook on the BPMSuite cloned repository. I.e., on each commit to the repository, the change is automatically pushed to remote. Please note that Git hooks are not yet available/supported in the BPMSuite Git implementation: https://bugzilla.redhat.com/show_bug.cgi?id=1066962
+* Manually: the commits on the BPMSuite Git repository are manually pushed to remote origin. This gives more control over the commit process and allows the person responsible to decide when changes are to be pushed to origin and thus when these changes are available to the build process.
+
+Note: for this concept to properly work, only the BPMSuite Design Servers are allowed to push to origin. The reason for this is that there is currently no possibility in BPMSuite to fetch and merge/rebase changes from remote. By only allowing the BPMSuite Design Server to commit to remote, we prevent to end up in a situation where we need to pull external changes into the BPMSuite Design environment.
+ 
+===== Maven Repository
+The BPMSuite internal Maven repository, to which BPMSuite by default deploys the KJARs that it builds, is in this architecture only used to deploy KJARs when one presses the 'Build& Deploy' button in the Project Editor. It can thus be used as the repository from which to deploy the KJAR on the Design Server, for example to manually test the process. However, it is not used as the repository to which the final build artifacts are published. Instead, we will use a central artifact repository (e.g. Nexus) to store and manage the KJARs.
+ 
+
+==== Development Workstation
+The development workstation is setup with JBoss Developer Studio and the JBDS Integration Stack (which provides the Drools and jBPM editors). This allows the more technical developers to work on BPMSuite projects and development artifacts from within their IDE. To work on the BPMSuite projects, it is required that the developers work on a Git repository which is cloned from BPMSuite, not from the central SCM. The reason for this is, as we explained in the previous section, that we only allow the BPMSuite Design Server to push changes to the central SCM, to prevent having to fetch changes from the central SCM into the BPMSuite repository.
+ 
+Developers can build and test their projects using Maven. All required Maven artifacts (libraries, frameworks, datamodels) are stored and managed in the central artifact repository (e.g. Nexus). Therefore, there is no requirement to configure the BPMSuite Maven repository as a remote repository in the Maven configuration on the development machines.
+ 
+==== SCM Server
+Most of the time, enterprises already have a corporate policy with regards to source code management and version control. In larger companies, dedicated teams are responsible for the administration and management of these environments, usually combined with the responsibility for the centralized build environments, configuration management and release and deployment management. Hence, larger enterprises often have the requirement that all source code/development artifacts are stored in the corporate SCM environment.
+ 
+This architecture satisfies this requirement by storing all BPMSuite in the central SCM, making the SCM the 'source of truth' of all BPMSuite artifacts. The Continuous Integration environment monitors the central SCM and fetches the sources from the central SCM.
+ 
+For a customer implementation, see BxMS Git Workflow At Genworth and JBoss BPMS Design Time & Development Architecture.
+ 
+==== Continuous Integration Server
+The Continuous Integration server's responsibility is to scan (via polling or notifications) the SCM Server for changes to the source code and development artefacts (BPMN2 files, rules, etc.). When one or more of these artefacts change, a new build of the project is started. Such a build wil:
+Pull down the new project artefacts from the SCM.
+Start a Maven build to build the KJAR, which will usually:
+
+* Compile the artefacts.
+* Test the artefacts (e.g. via JUnit and/or TestNG).
+* Build the KJAR.
+* Install the KJAR in the local Maven2 repository.
+* Deploy the KJAR to the central Maven Artefact Repository.
+ 
+Optionally, the CI server can also:
+
+* Generate documentation for the current build (e.g. JavaDoc).
+* Generate quality metrics and reports (e.g. PMD, CheckStyle, possibly integrated in a quality platform like SonarQube).
+* Kick-off a CD deployment-pipeline/build-pipeline, that:
+* Deploys the KJAR on a BPMSuite runtime.
+* Executes integration tests
+* Propagates the KJAR through Test/Acceptance Production.
+ 
+Again, enterprises nowadays usually already have a centralised software build environment and continuous integration server, operated by dedicated teams. Therefore, in this architecture we don't make any assumptions with regards to the CI server used. This concept can be implemented on various platforms like Jenkins, Bamboo, TeamCity, etc.
+ 
+==== Artifact Repository (Maven)
+JBoss BRMS and BPMSuite rules and processes are packaged in KJARs and referenced and deployed using Maven GAVs. As Maven is the packaging and deployment mechanism of JBoss BRMS and BPMSuite, we can utilize any Maven artefact repository to store and manage our BxMS artefacts. The Maven repository that is shipped out-of-the-box with BxMS is a repository with limited functionality. By utlizing a more enterprise class Maven repository manager, like Nexus, Artifactory, Archive, etc., we can add a more sophisticated BxMS artifact management to our architecture. 
+
+=== BxMS Design Time clustering
+Clustering of the JBoss BxMS design-time environment mainly deals with clustering of the BxMS Git back-end. In the design-time environment, the BPMSuite database is not really used. The BPMSuite database is mostly used in the runtime environment to store process runtime data and process history data.
+
+In the design-time environment, clustering deals with clustering of the asset repository (Git). The asset repository is a Git backed virtual filesystem (VFS). To keep the Virtual File Systems in-sync between the various BPMSuite nodes, BPMSuite utilizes the following open-source projects:
+
+* Apache Zookeeper
+* Apache Helix
+
+Helis is teh cluster management component that registers all cluster details (cluster, nodes, resources, etc.) and Zookeeper is responsible for glueing all parts together.
+
+More information BPMSuite clustering can be found http://planet.jboss.org/post/clustering_in_jbpm_v6[here]
+
+
+=== BPMSuite Runtime Architecture
+
+Until JBoss BPMSuite 6.2, the only out-of-the-box environment on which processes could be deployed and executed was the Business Central platform. In 6.2, a new, unified, KIE Execution Server (or Decision Server) was introduced that allows KJARs to be deployed and processes to be executed on a more lightweight container (big benefit: cloud and container deployments).
+
+The KIE Execution Server was already available in JBoss BRMS/BPMSuite 6.1, but was only targetted at running rules. In version 6.2, the Execution Server can now also run processes. This allows for a more clean seperation of the Business Central design-time environment and the actual process runtime environmnet. I.e the instances can be individually scaled based on the requirements, we no longer need to deploy a fulle design-time environment in production to run process instances, etc.
+
+An additional advantage is that the process execution environment is now a lot more lightweight, allowing us to more easily package process runtime environments in, for example, Docker containers to be deployed on OpenShift v3.
+
+Maciej Swiderski, jBPM core engineer has created an excellent article serie on the new, unified, KIE Execution Server: 
+
+http://mswiderski.blogspot.nl/2015/09/unified-kie-execution-server-part-1.html
+http://mswiderski.blogspot.nl/2015/09/unified-kie-execution-server-part-2.html
+http://mswiderski.blogspot.nl/2015/09/unified-kie-execution-server-part-3.html
+http://mswiderski.blogspot.nl/2015/09/unified-kie-execution-server-part-4.html
+
+
+==== KIE Execution Server and Containers
+On a KIE Execution Server one can deploy 1 or more _Containers_, where a Container is basically a _KieContainer_ which references a KJAR through a Maven GAV. I.e. one can create a Container per KJAR and assign multiple containers to a single KIE Execution Server. 
+
+
+==== KIE Execution Server: Operational Modes
+Basically, the Execution Server can operate in 2 modes:
+
+* Standalone: in this mode, the execution server is not managed by a central environment. Containers are created and managed directly on the kie-server itself.
+* Managed: in this mode, the architecture contains one or more kie-server controllers to which the kie-servers connect. Creation, configuration and deployment of Containers on kie-servers is managed from the central environment through the controllers.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+== jBPM Process Editors
+jBPM/BPMSuite processes are defined in BPMN2, the Business Process Modeling and Notation standard which defines a graphical notation and execution model for business processes. As jBPM uses the BPMN2 standard, process definitions can be created using a variety of tools that support the BPMN2 standard. Out-of-the-box, BPMSuite provides the following editors:
+
+* JBoss Developer Studio / Eclipse BPMN2 editor: a BPMN2 editor available in the JBDS IDE.
+* JBoss BPMSuite Business Central web-editor: a web-based BPMN2 editor available in the JBoss BPMSuite Business Central console.
+
+=== JBoss Developer Studio
+
+A business process is defined in BPMN2. A BPMN2 file in KIE/Drools/jBPM is regarded, like a _.drl_, _.xls_, _.dsl_, etc., as a Drools https://docs.jboss.org/jbpm/v6.3/javadocs/org/kie/api/io/ResourceType.html[ResourceType]. Hence, a BPMN2 file is defined, stored and loaded into a `KieBase` in exactly the same way as any other Drools ResourceType.
+
+To define a BPM process, a _.bpmn_ file should be created in the _src/main/resources_ directory of a Java project, the project from which we will create a _KJAR_. Next to this _.bpmn_ file, we need to define a _kmodule.xml_ in the _src/main/resources/META-INF_ directory.
+
+image:images/jbds-kjar-layout.png["JBDS KJAR Layout"]
+
+image:images/jbds-process-editor.png["JBDS Process Editor", height=128]
+
+
+== Business Central Process Editor
+
+image:images/business-central-process-editor.png["Business Central Process Editor",height=128]
 
 
 == jBPM APIs

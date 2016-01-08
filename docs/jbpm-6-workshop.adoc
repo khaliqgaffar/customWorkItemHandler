@@ -2,7 +2,6 @@
 
 Business Process Management:: _Business process management (BPM) is a field in operations management that focuses on improving corporate performance by managing and optimising a company's business processes._ 
 
-
 == BPMN 2.0
 
 Business Process Model and Notation (BPMN) is a graphical representation for specifying business processes in a business process model.
@@ -195,6 +194,10 @@ Apart from the UIs provided by Business Central, the platform also provides a nu
 
 More information about the jBPM remoting interfaces can be found https://docs.jboss.org/jbpm/v6.3/userguide/ch17.html[here].
 
+==== Deployments
+Process definitions are packages in KJARs. To deploy a process on the runtime platform, we therefore need to deploy a KJAR on the Business Central platform.
+
+When doing a deployment in JBoss BPMSuite, we deploy a KJAR using its Maven GAV (GroupId, ArtifactId, Version). In fact, when performing a deployment, we don't really deploy the actual artifact onto the platform. Instead, we actually register the Maven GAV on the platform (using GUI, REST interface or any other supported mechanism). The platform itself will construct a `KieContainer` with the given `ReleaseId`, on which the platform will fetch the artefact, and its dependencies, from the Maven repository.
 
 === KIE Execution Server
 
@@ -213,7 +216,7 @@ http://mswiderski.blogspot.nl/2015/09/unified-kie-execution-server-part-4.html
 
 
 ==== KIE Execution Server and Containers
-On a KIE Execution Server one can deploy 1 or more _Containers_, where a Container is basically a _KieContainer_ which references a KJAR through a Maven GAV. I.e. one can create a Container per KJAR and assign multiple containers to a single KIE Execution Server. 
+On a KIE Execution Server one can deploy 1 or more _Containers_, where a Container is basically a _KieContainer_ which references a KJAR through a Maven GAV. I.e. one can create a Container per KJAR and assign multiple containers to a single KIE Execution Server. As with Business Central, the artefact is thus deployed by simply poiting the platform to a specific Maven GAV, on which the platform will fetch the actual artefact from the Maven repository. 
 
 
 ==== KIE Execution Server: Operational Modes
@@ -222,17 +225,70 @@ Basically, the Execution Server can operate in 2 modes:
 * Standalone: in this mode, the execution server is not managed by a central environment. Containers are created and managed directly on the kie-server itself.
 * Managed: in this mode, the architecture contains one or more kie-server controllers to which the kie-servers connect. Creation, configuration and deployment of Containers on kie-servers is managed from the central environment through the controllers.
 
+In Standalone mode, administration of which containers are created, their configuration, etc. is maintained in a file on the filesystem of the host that runs the kie-server.
+
+
+==== Some KIE Server REST commands
+This paragraph will list a number of REST commands that allow one to interact with the kie-server and the controller nodes
+
+* List process definitions deployed on a KIE Execution Server container: GET http://localhost:8080/kie-server/services/rest/server/queries/processes/definitions
+* List kie-server configuration: GET http://localhost:8080/kie-server/services/rest/server/
+* List containers deployed on a kie-server: GET http://localhost:8080/kie-server/services/rest/server/containers
+* Create a new container on a kie-server (Standalone): PUT http://localhost:8080/kie-server/services/rest/server/containers/{container-name}
+
+_REQUEST_
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<kie-container container-id="mycontainer">
+    <release-id>
+        <group-id>org.jboss.ddoyle</group-id>
+        <artifact-id>MyFirstProject</artifact-id>
+        <version>1.0.0</version>
+    </release-id>
+</kie-container>
+----
+
+* Create a process instance: POST http://docker-dev:32827/kie-server/services/rest/server/containers/{container-id}/processes/{process-id}/instances
+
+If the process accepts process input variables, one can pass them as XML in the request body.
+_REQUEST_
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<map-type>
+    <entries>
+        <entry>
+            <key>age</key>
+            <value xsi:type="xs:int" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">25</value>
+        </entry>
+        <entry>
+            <key>name</key>
+            <value xsi:type="xs:string" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">john</value>
+        </entry>
+    </entries>
+</map-type>
+----
+
+* Retrieve a process image: GET http://localhost:8080/business-central/rest/runtime/{deploymentId}/process/{process-id}/image
+
+(Note that this requires the _storesvgonsave_ property to be set to _true_ in _jboss-eap-6.4/standalone/deployments/business-central.war/org.kie.workbench.KIEWebapp/profiles/jbpm.xml_, which enables auto-save of the process image when the BPMN2 model is saved in the designer).
 
 
 
+=== Maven Deployments
+As stated earlier, KJARs are not actually deployed on Business-Central/Kie-Execution-Server. Instead, the a Maven GAV is provided to the platform, which well then fetch the artefact, and its dependencies, from the Maven repository.
 
-=== KJAR deployment
-KJARs are not actually deployed on a
+By default, JBoss BPMSuite is configured to reference and use its own, internal, Maven repository. This is very convenient for a simple, out-of-the-box, setup. When one presses the _Build and Deploy_ button in the designer, the Maven artefact is built on the Business-Central platform and uploaded (deployed) to the internal Maven repository, from which the platform can fetch the artefact when a Maven GAV is deployed onto the runtime.
+
+In an enterprise scenario, in which one might already use a more sophisticated Maven repository manager, this solution is most-likely not appropriate. In these kind of scenerio's we would actually want JBoss BPMSuite to interface with the central Maven repository.
+
+Luckily, the Maven configuration of JBoss BPMSuite is highly customizable. In fact, it adheres to he de-facto Maven standards and can be configured using a Maven _settings.xml_ file. In a _settings.xml_ we can configure from which (remote) repositories JBoss BPMSuite cam retrieve its artefacts, just like with any other Maven client.
+
+The _settings.xml_ file to be used by JBoss BPMSuite can be configured using the _kie.maven.settings.custom_ System Property, which can be passed, for example, via the command-line when starting the JBoss EAP container, or which can be configured in a JBoss EAP profile.
 
 
-
-
-
+== Designing jBPM Processes
 
 == jBPM Process Editors
 jBPM/BPMSuite processes are defined in BPMN2, the Business Process Modeling and Notation standard which defines a graphical notation and execution model for business processes. As jBPM uses the BPMN2 standard, process definitions can be created using a variety of tools that support the BPMN2 standard. Out-of-the-box, BPMSuite provides the following editors:

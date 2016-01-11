@@ -347,6 +347,65 @@ The task is simple:
 * Configure the _script-task-node_ to print "Hello Process".
 * Finish the code in the `Main` class to create a `KieSession` from the `KieContainer`, start the process and dispose the `KieSession`.
 
+=== kmodule.xml
+As with BRMS, the KieBase and KieSession configurations of a jBPM/BPMSuite KJAR can be configured in a _kmodule.xml_ configuration file. The _kmodule.xml_ allows use to configure things like:
+
+* default `KieBase` and `KieSession`.
+* `KieBase` equality behaviour.
+* `KieSession` clock-type.
+* `KieSession` EventListeners
+* `KieSession` WorkItemHandlers.
+
+[source,xml]
+----
+
+<kmodule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://jboss.org/kie/6.0.0/kmodule">
+
+  <kbase name="defaultKieBase" default="true" eventProcessingMode="cloud" equalsBehavior="identity" declarativeAgenda="disabled" scope="javax.enterprise.context.ApplicationScoped" packages="*">
+
+    <ksession name="defaultKieSession" type="stateful" default="true" clockType="realtime" scope="javax.enterprise.context.ApplicationScoped">
+        <workItemHandlers>
+            <workItemHandler name="CustomTask" type="FQCN_OF_HANDLER" />
+        </workItemHandlers>
+        <listeners>
+            <listener type="FQCN_OF_EVENT_LISTENER" />
+        </listeners>
+    </ksession>
+    <ksession name="defaultStatelessKieSession" type="stateless" default="true" clockType="realtime" scope="javax.enterprise.context.ApplicationScoped"/>
+
+  </kbase>
+
+</kmodule>
+----
+
+=== jBPM Deployment Descriptor
+Apart from the configuration options available in the _kmodule.xml_, jBPM provides quite a few more configurable options over a standard Drools/BRMS KJAR. These options include:
+
+* Persistence Unit
+* Audit Persistence Unit
+* Runtime Strategy: `KieSession` strategy for process instances: SINGLETON, PER_PROCESS_INSTANCE, PER_REQUEST
+* Marshalling Strategies: allows for custom marshalling strategies for things like process variables.
+* Event Listseners
+* Task Event Listeners
+* Globals
+* WorkItemHandlers
+
+Deployment descriptors can be created at multiple hierarchical levels:
+
+* server level
+* dependency KJAR level
+* KJAR level
+
+At runtime these defitions will be merged. jBPM provides a _merging strategy_ option that allows you to define how these configuration options are merged. The default merging mode is MERGE_COLLECTIONS. Other options are:
+
+* KEEP_ALL
+* OVERRIDE_ALL
+* OVERRIDE_EMPTY
+* MERGE_COLLECITONS
+
+See also: https://docs.jboss.org/jbpm/v6.3/userguide/ch14.html#d0e12357
+
+
 
 === EventListeners
 As with Drools/BRMS, a powerful and important concept in the *KIE* API when it comes to jBPM are the `EventListeners`. We've seen 'EventListeners' before in the BRMS workshop, where we mostly looked at `RuleRuntimeEventListeners` and `AgendaEventListener`. The most important `EventListener` from a jBPM perspective is the `ProcessEventListener`. 

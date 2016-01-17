@@ -1,0 +1,32 @@
+#ambassador:
+#  image: cpuguy83/docker-grand-ambassador
+#  volumes:
+#    - "/var/run/docker.sock:/var/run/docker.sock"
+#  command: "-name kieServer1 -name bpmSuite"
+
+#kieServer1:
+#   image: jboss-bpmsuite-6/kie-server-6.2.0
+#   links:
+#     - bpmSuite:bpmSuite
+#   ports:
+#     - "8080"
+#     - "8230"
+#     - "9990"
+#     - "9999"
+#     - "8787"
+postgresql:
+  image: jbpm-workshop/postgresql:9.3_bpmsuite
+  ports:
+    - "5432"
+bpmSuite:
+   image: jbpm-workshop/jboss-bpmsuite:6.2.0
+   links:
+    - postgresql:postgresql
+   volumes_from:
+    - jboss-bpms-data
+   ports:
+    - "8001"
+    - "8080"
+    - "9990"
+    - "9999"
+    - "8787"

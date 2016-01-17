@@ -1,7 +1,0 @@
-bpmSuite:
-   image: jboss-bpmsuite-6/bpmsuite-6.2.0-openshift
-   ports:
-    - "8080"
-    - "9990"
-    - "9999"
-    - "8787"

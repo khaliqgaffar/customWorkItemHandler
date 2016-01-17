@@ -423,7 +423,7 @@ In this lab we will introduce a jBPM6 Deployment Descriptor to an existing proce
 
 This is an often required functionality when additional logging and monitoring is required on top of the history monitoing provided by the `JPAWorkingMemoryDbLogger`.
 
-The starting point is the JBoss DemoCentral Travel Agency demo. With this workshop, you have been provided some Docker images and a _docker-compose.yml_ file in the [docker](../docker) directory.
+Is a Docker based installation of JBoss BPMSuite which is comprised of 3 containers: JBoss BPMSuite 6.2.0, PostgreSQL 9.3 and a Docker data-volume container. With this workshop, you have been provided some Docker images and a _docker-compose.yml_ file in the [docker](../docker/bpmsuite) directory.
 
 1) Make sure you've build the following images:
 
@@ -431,7 +431,9 @@ The starting point is the JBoss DemoCentral Travel Agency demo. With this worksh
 * jboss-bpmsuite-6/bpmsuite-6.2.0:latest
 * jboss-bpmsuite-6/jboss-bpms-data:1.0.0
 
-And that you have created a data-volume container called: jboss-bpms-data
+The images can be build using the (../docker/build-all-images.sh) script. Please note that some images require JBoss EAP and JBoss BPMSuite distribution ZIPs in their _dockerfile_copy_ directories in order for the image to build. Which files are required is outlined in the README.txt file in the various directories.
+
+Also make sure that you have created a data-volume container called: jboss-bpms-data. This can be done with the (../docker/bpms-date/create_container.sh) script.
 
 Next, start the container ensemble using by calling _doccker-compose_ in the [directory](../docker/eap_and_bpmsuite) that contains our _docker-compose.yml_ file: docker-compose up
 
@@ -439,19 +441,26 @@ Next, start the container ensemble using by calling _doccker-compose_ in the [di
 username: bpmsAdmin
 password: jboss@01
 
-3) Clone the Travel Agency demo Git repository into business-central.
+3) Create a new Project. Give it a name and version (GroupId, ArtifactId, Version). In this project, create a BPMN2 process.
 
-4) Build and deploy the process. Run through a simple example by starting a process instance.
+4) Create a very simple process definition. E.g. a start-node, script-task and a stop-node. Save the process, build-and-deploy the project and test your process.
 
-5) In JBoss Developer Studio, open the _jbpm-6-workshop-use-case-2_ project. Within this Java project, implement a `ProcessEventListener` that logs the start of a process to `System.out`.
+6) In JBoss Developer Studio, open the _jbpm-6-workshop-use-case-2_ project. Within this Java project, implement a `ProcessEventListener` that logs the start of a process to `System.out`.
 
-6) Build the project using Maven to generate the JAR file and install it in your local repository.
+7) Build the project using Maven to generate the JAR file and install it in your local repository.
 
-7) In our Lab environment, to be able to reference another JAR (e.g. our JAR containing our `ProcessEventListener`, we need to upload it to a repository from which "Business-Central" can access it. In an enterprise environment, one would probably upload the artifact to a managed Maven repository (e.g. Nexus) and configure BPMSuite to use the Nexus repository as a remote repository. In our lab environment, we're simply going to upload our JAR file to business-central using "Authoring -> Artifact Repository" view. Please note that we need to upload the parent POM file of our project before uploading the actual project JAR (i.e. jbpm-6-workshop-use-case-2).
+8) In our Lab environment, to be able to reference another JAR (e.g. our JAR containing our `ProcessEventListener`, we need to upload it to a repository from which "Business-Central" can access it. In an enterprise environment, one would probably upload the artifact to a managed Maven repository (e.g. Nexus) and configure BPMSuite to use the Nexus repository as a remote repository. In our lab environment, we're simply going to upload our JAR file to business-central using "Authoring -> Artifact Repository" view. Please note that we need to upload the parent POM file of our project before uploading the actual project JAR (i.e. jbpm-6-workshop-use-case-2).
 
-8) To allow our process to be configured with our custom `ProcessEventListener`, we need to add a dependency from the KJAR that contains our process to the JAR that contains our `ProcessEventListener`. This can be done in the Project Editor view (or if you're more of a command-line person, you could clone the Git repo, edit the POM using VIM and commit and push the updated POM :-)).
+9) To allow our process to be configured with our custom `ProcessEventListener`, we need to add a dependency from the KJAR that contains our process to the JAR that contains our `ProcessEventListener`. This can be done in the Project Editor view (or if you're more of a command-line person, you could clone the Git repo, edit the POM using VIM and commit and push the updated POM :-)).
 
-9) 	
+10) To add our custom `ProcessEventListener` to our process, we can basically do 2 things.
+
+* Add the `ProcessEventListener` to the _kmodule.xml_ KIE configuration file.
+* Use the jBPM6 Deployment Descriptor.
+
+The jBPM6 Deployment Descriptor was added to JBoss BPMSuite i version 6.1 and is the preferred option.
+
+11) After you've configured your `ProcessEventListener`, rebuild the project, deploy the project and run a new instance. Observe the output of the log-file (e.g. docker console) and see that the `ProcessEventListener` logs data to `System.out`.
  
 
 
